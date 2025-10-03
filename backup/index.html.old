@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Planner Pro - Professional Flight Planning for All Simulators</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-plane"></i> Flight Planner Pro</h1>
+                <p class="subtitle">Professional Flight Planning for MSFS2020, X-Plane 12, Prepar3D, FSX & More</p>
+            </div>
+            <div class="simulator-badges">
+                <span class="badge">MSFS 2020</span>
+                <span class="badge">X-Plane 12</span>
+                <span class="badge">Prepar3D</span>
+                <span class="badge">FSX</span>
+                <span class="badge">PMDG</span>
+                <span class="badge">FlyByWire</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel - Flight Planning Form -->
+            <div class="left-panel">
+                <div class="card">
+                    <h2><i class="fas fa-route"></i> Flight Plan</h2>
+                    
+                    <!-- Simulator Selection -->
+                    <div class="form-group">
+                        <label><i class="fas fa-desktop"></i> Simulator Platform</label>
+                        <select id="simulator" class="form-control">
+                            <option value="MSFS2020">Microsoft Flight Simulator 2020</option>
+                            <option value="X-Plane 12">X-Plane 12</option>
+                            <option value="X-Plane 11">X-Plane 11</option>
+                            <option value="Prepar3D v6">Prepar3D v6</option>
+                            <option value="Prepar3D v5">Prepar3D v5</option>
+                            <option value="FSX">FSX</option>
+                            <option value="DCS World">DCS World</option>
+                        </select>
+                    </div>
+
+                    <!-- Departure Airport -->
+                    <div class="form-group">
+                        <label><i class="fas fa-plane-departure"></i> Departure Airport (ICAO)</label>
+                        <input type="text" id="departure" class="form-control" placeholder="e.g., KJFK" maxlength="4">
+                        <div id="departure-info" class="airport-info"></div>
+                    </div>
+
+                    <!-- Arrival Airport -->
+                    <div class="form-group">
+                        <label><i class="fas fa-plane-arrival"></i> Arrival Airport (ICAO)</label>
+                        <input type="text" id="arrival" class="form-control" placeholder="e.g., EGLL" maxlength="4">
+                        <div id="arrival-info" class="airport-info"></div>
+                    </div>
+
+                    <!-- Aircraft Selection -->
+                    <div class="form-group">
+                        <label><i class="fas fa-jet-fighter"></i> Aircraft Category</label>
+                        <select id="aircraft-category" class="form-control">
+                            <option value="">Select Category</option>
+                            <option value="boeing">Boeing</option>
+                            <option value="airbus">Airbus</option>
+                            <option value="regional">Regional Jets</option>
+                            <option value="cargo">Cargo Aircraft</option>
+                            <option value="general">General Aviation</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-plane"></i> Aircraft Type</label>
+                        <select id="aircraft" class="form-control">
+                            <option value="">First select a category</option>
+                        </select>
+                        <div id="aircraft-info" class="aircraft-info"></div>
+                    </div>
+
+                    <!-- Flight Parameters -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-arrow-up"></i> Cruise Altitude (ft)</label>
+                            <input type="number" id="altitude" class="form-control" value="35000" step="1000">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-tachometer-alt"></i> Cruise Speed (kts)</label>
+                            <input type="number" id="speed" class="form-control" value="450" step="10">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="button-group">
+                        <button id="calculate-btn" class="btn btn-primary">
+                            <i class="fas fa-calculator"></i> Calculate Route
+                        </button>
+                        <button id="clear-btn" class="btn btn-secondary">
+                            <i class="fas fa-eraser"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Weather Information -->
+                <div class="card" id="weather-card" style="display: none;">
+                    <h2><i class="fas fa-cloud-sun"></i> Weather Information</h2>
+                    <div id="weather-content"></div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Map and Route Display -->
+            <div class="center-panel">
+                <!-- Map -->
+                <div class="card">
+                    <h2><i class="fas fa-map"></i> Route Map</h2>
+                    <div id="map"></div>
+                </div>
+
+                <!-- Route Details -->
+                <div class="card" id="route-card" style="display: none;">
+                    <h2><i class="fas fa-list"></i> Route Details</h2>
+                    <div id="route-details"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Flight Brief and Export -->
+            <div class="right-panel">
+                <div class="card" id="flight-brief-card" style="display: none;">
+                    <h2><i class="fas fa-clipboard-list"></i> Flight Brief</h2>
+                    <div id="flight-brief"></div>
+                    
+                    <div class="button-group">
+                        <button id="export-pdf-btn" class="btn btn-success">
+                            <i class="fas fa-file-pdf"></i> Export to PDF
+                        </button>
+                        <button id="copy-route-btn" class="btn btn-info">
+                            <i class="fas fa-copy"></i> Copy Route
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Airport Charts -->
+                <div class="card" id="charts-card" style="display: none;">
+                    <h2><i class="fas fa-map-marked-alt"></i> Airport Charts</h2>
+                    <div id="charts-content">
+                        <p class="info-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Charts can be found at:
+                        </p>
+                        <div class="chart-links">
+                            <a href="https://chartfox.org" target="_blank" class="chart-link">
+                                <i class="fas fa-external-link-alt"></i> ChartFox
+                            </a>
+                            <a href="https://skyvector.com" target="_blank" class="chart-link">
+                                <i class="fas fa-external-link-alt"></i> SkyVector
+                            </a>
+                            <a href="https://www.airnav.com" target="_blank" class="chart-link">
+                                <i class="fas fa-external-link-alt"></i> AirNav
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Reference -->
+                <div class="card">
+                    <h2><i class="fas fa-book"></i> Quick Reference</h2>
+                    <div class="quick-ref">
+                        <h3>Common Cruise Altitudes</h3>
+                        <ul>
+                            <li><strong>Short Haul:</strong> FL280-FL350</li>
+                            <li><strong>Medium Haul:</strong> FL350-FL390</li>
+                            <li><strong>Long Haul:</strong> FL390-FL430</li>
+                            <li><strong>Regional:</strong> FL250-FL350</li>
+                            <li><strong>General Aviation:</strong> 5000-12000 ft</li>
+                        </ul>
+                        
+                        <h3>Standard Climb/Descent</h3>
+                        <ul>
+                            <li><strong>Climb Rate:</strong> 1500-2500 fpm</li>
+                            <li><strong>Descent Rate:</strong> 1500-2000 fpm</li>
+                            <li><strong>Top of Descent:</strong> ~3nm per 1000ft</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Flight Planner Pro | For Flight Simulation Use Only</p>
+            <p class="footer-links">
+                <a href="#" onclick="showAbout()">About</a> | 
+                <a href="#" onclick="showHelp()">Help</a> | 
+                <a href="https://github.com" target="_blank">GitHub</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Calculating route...</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

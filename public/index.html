@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Dispatch Center - Professional Flight Operations</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <i class="fas fa-plane-departure"></i>
+                <span class="logo-text">FLIGHT DISPATCH</span>
+                <span class="logo-subtitle">Professional Operations Center</span>
+            </div>
+        </div>
+        <div class="nav-center">
+            <div class="system-time">
+                <i class="far fa-clock"></i>
+                <span id="utc-time">--:--:-- UTC</span>
+            </div>
+            <div class="connection-status online">
+                <i class="fas fa-circle"></i>
+                <span>SYSTEM OPERATIONAL</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" onclick="togglePanel('settings')">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button class="nav-btn" onclick="togglePanel('help')">
+                <i class="fas fa-question-circle"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Sidebar - Flight Planning -->
+        <aside class="sidebar sidebar-left">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-route"></i> FLIGHT PLANNING</h2>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Flight Number -->
+                <div class="form-section">
+                    <label class="section-label">FLIGHT IDENTIFICATION</label>
+                    <div class="input-group">
+                        <input type="text" id="flight-number" class="form-input" placeholder="e.g., AAL123" maxlength="10">
+                        <span class="input-label">Flight Number</span>
+                    </div>
+                </div>
+
+                <!-- Route Planning -->
+                <div class="form-section">
+                    <label class="section-label">ROUTE PLANNING</label>
+                    
+                    <div class="airport-selector">
+                        <div class="input-group">
+                            <input type="text" id="departure" class="form-input airport-input" 
+                                   placeholder="Search airport..." autocomplete="off">
+                            <span class="input-label"><i class="fas fa-plane-departure"></i> DEPARTURE</span>
+                            <div id="departure-results" class="autocomplete-results"></div>
+                        </div>
+                        <div class="airport-info" id="departure-info"></div>
+                    </div>
+
+                    <div class="route-divider">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+
+                    <div class="airport-selector">
+                        <div class="input-group">
+                            <input type="text" id="arrival" class="form-input airport-input" 
+                                   placeholder="Search airport..." autocomplete="off">
+                            <span class="input-label"><i class="fas fa-plane-arrival"></i> ARRIVAL</span>
+                            <div id="arrival-results" class="autocomplete-results"></div>
+                        </div>
+                        <div class="airport-info" id="arrival-info"></div>
+                    </div>
+                </div>
+
+                <!-- Simulator Platform -->
+                <div class="form-section">
+                    <label class="section-label">SIMULATOR PLATFORM</label>
+                    <select id="simulator" class="form-select">
+                        <option value="MSFS2020">Microsoft Flight Simulator 2020</option>
+                        <option value="XPLANE12">X-Plane 12</option>
+                        <option value="XPLANE11">X-Plane 11</option>
+                        <option value="P3DV6">Prepar3D v6</option>
+                        <option value="P3DV5">Prepar3D v5</option>
+                        <option value="FSX">Flight Simulator X</option>
+                        <option value="DCS">DCS World</option>
+                    </select>
+                </div>
+
+                <!-- Aircraft Selection -->
+                <div class="form-section">
+                    <label class="section-label">AIRCRAFT SELECTION</label>
+                    <select id="aircraft-category" class="form-select">
+                        <option value="">Select Category</option>
+                        <option value="boeing">Boeing Commercial</option>
+                        <option value="airbus">Airbus Commercial</option>
+                        <option value="regional">Regional Jets</option>
+                        <option value="cargo">Cargo Aircraft</option>
+                        <option value="general">General Aviation</option>
+                    </select>
+                    <select id="aircraft" class="form-select" disabled>
+                        <option value="">First select category</option>
+                    </select>
+                    <div class="aircraft-specs" id="aircraft-specs"></div>
+                </div>
+
+                <!-- Flight Parameters -->
+                <div class="form-section">
+                    <label class="section-label">FLIGHT PARAMETERS</label>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <label>CRUISE ALTITUDE</label>
+                            <div class="param-input-wrapper">
+                                <input type="number" id="altitude" class="param-input" value="35000" step="1000" min="0" max="45000">
+                                <span class="param-unit">FT</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label>CRUISE SPEED</label>
+                            <div class="param-input-wrapper">
+                                <input type="number" id="speed" class="param-input" value="450" step="10" min="100" max="600">
+                                <span class="param-unit">KTS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="calculate-btn" class="btn btn-primary btn-large">
+                        <i class="fas fa-calculator"></i>
+                        <span>CALCULATE FLIGHT PLAN</span>
+                    </button>
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <i class="fas fa-eraser"></i>
+                        <span>CLEAR ALL</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center - Map and Route Display -->
+        <main class="main-content">
+            <!-- Map Section -->
+            <section class="map-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-map-marked-alt"></i> ROUTE MAP</h3>
+                    <div class="map-controls">
+                        <button class="map-btn" onclick="fitMapToRoute()" title="Fit to route">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                        <button class="map-btn" onclick="toggleMapLayer()" title="Toggle layer">
+                            <i class="fas fa-layer-group"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="map" class="map-container"></div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="legend-marker departure"></span>
+                        <span>Departure</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-marker arrival"></span>
+                        <span>Arrival</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-marker waypoint"></span>
+                        <span>Waypoint</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-line"></span>
+                        <span>Flight Path</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Route Summary -->
+            <section class="route-summary" id="route-summary" style="display: none;">
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-ruler"></i></div>
+                        <div class="summary-content">
+                            <div class="summary-label">DISTANCE</div>
+                            <div class="summary-value" id="summary-distance">--- NM</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-compass"></i></div>
+                        <div class="summary-content">
+                            <div class="summary-label">INITIAL HDG</div>
+                            <div class="summary-value" id="summary-heading">---°</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-clock"></i></div>
+                        <div class="summary-content">
+                            <div class="summary-label">FLIGHT TIME</div>
+                            <div class="summary-value" id="summary-time">--:--</div>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="fas fa-gas-pump"></i></div>
+                        <div class="summary-content">
+                            <div class="summary-label">FUEL REQ</div>
+                            <div class="summary-value" id="summary-fuel">----- LBS</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Weather Section -->
+            <section class="weather-section" id="weather-section" style="display: none;">
+                <div class="section-header">
+                    <h3><i class="fas fa-cloud-sun"></i> METEOROLOGICAL CONDITIONS</h3>
+                </div>
+                <div class="weather-grid">
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <i class="fas fa-plane-departure"></i>
+                            <span>DEPARTURE</span>
+                            <span class="weather-icao" id="weather-dep-icao">----</span>
+                        </div>
+                        <div class="metar-display" id="metar-departure">Loading...</div>
+                    </div>
+                    <div class="weather-card">
+                        <div class="weather-header">
+                            <i class="fas fa-plane-arrival"></i>
+                            <span>ARRIVAL</span>
+                            <span class="weather-icao" id="weather-arr-icao">----</span>
+                        </div>
+                        <div class="metar-display" id="metar-arrival">Loading...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Sidebar - Flight Brief & Export -->
+        <aside class="sidebar sidebar-right">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-clipboard-list"></i> OPERATIONAL FLIGHT PLAN</h2>
+            </div>
+            
+            <div class="sidebar-content" id="ofp-content">
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>Calculate a flight plan to view the Operational Flight Plan</p>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="export-section" id="export-section" style="display: none;">
+                <div class="section-header">
+                    <h3><i class="fas fa-download"></i> EXPORT OPTIONS</h3>
+                </div>
+                
+                <div class="export-grid">
+                    <button class="export-btn pmdg" onclick="exportFormat('pmdg')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>PMDG .RTE</span>
+                    </button>
+                    <button class="export-btn msfs" onclick="exportFormat('msfs')">
+                        <i class="fas fa-file-code"></i>
+                        <span>MSFS .PLN</span>
+                    </button>
+                    <button class="export-btn xplane" onclick="exportFormat('xplane')">
+                        <i class="fas fa-file"></i>
+                        <span>X-Plane .FMS</span>
+                    </button>
+                    <button class="export-btn pdf" onclick="exportFormat('pdf')">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>PDF OFP</span>
+                    </button>
+                    <button class="export-btn copy" onclick="copyRouteString()">
+                        <i class="fas fa-copy"></i>
+                        <span>COPY ROUTE</span>
+                    </button>
+                    <button class="export-btn simbrief" onclick="openSimBrief()">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>SIMBRIEF</span>
+                    </button>
+                </div>
+
+                <div class="charts-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-map"></i> CHARTS & REFERENCES</h3>
+                    </div>
+                    <div class="charts-links">
+                        <a href="#" class="chart-link" id="chartfox-dep" target="_blank">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span>Departure Charts (ChartFox)</span>
+                        </a>
+                        <a href="#" class="chart-link" id="chartfox-arr" target="_blank">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <span>Arrival Charts (ChartFox)</span>
+                        </a>
+                        <a href="#" class="chart-link" id="skyvector-link" target="_blank">
+                            <i class="fas fa-route"></i>
+                            <span>SkyVector Route</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Processing flight plan...</div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
