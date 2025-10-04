@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: flight-dispatch-center
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AEROAPI_KEY
+        sync: false  # Must be set manually in Render dashboard
