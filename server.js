@@ -5,13 +5,18 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const fetch = require('node-fetch');
+require('dotenv').config(); // Load environment variables
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
+
+// FlightAware AeroAPI Configuration
+const AEROAPI_KEY = process.env.AEROAPI_KEY;
+const AEROAPI_BASE = 'https://aeroapi.flightaware.com/aeroapi';
 
 // =====================================================
 // REAL NAVIGATION WAYPOINTS DATABASE
