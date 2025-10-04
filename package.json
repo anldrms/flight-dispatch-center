@@ -5,7 +5,17 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "npx nodemon server.js",
+    "watch": "npx nodemon",
+    "restart": "npm run stop && npm run dev",
+    "stop": "lsof -ti:3000 | xargs kill -9 2>/dev/null || pkill -9 -f 'node server.js'",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop flight-dispatch",
+    "pm2:restart": "pm2 restart flight-dispatch",
+    "pm2:delete": "pm2 delete flight-dispatch",
+    "pm2:logs": "pm2 logs flight-dispatch",
+    "pm2:status": "pm2 status",
+    "quick": "./start.sh"
   },
   "keywords": [
     "flight",
@@ -29,5 +39,8 @@
     "node-fetch": "^2.7.0",
     "pdfkit": "^0.13.0",
     "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
